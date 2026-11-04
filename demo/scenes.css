@@ -1,0 +1,314 @@
+/* Fader's live scenes (scenes.js): the frame each one sits in on the page, then what is drawn inside the
+   1200 × 750 stage: Harbor (the app every scene works on), Fader's chrome, an editor, a terminal, the Tokens
+   board. Every class starts with fx-; the window itself is step-window.css (hd-). */
+
+/* The frame: like the first block (the case study's, stages/), the scene fills the whole image block on the
+   case pages' dark board: no window around it, the stage fitted and centred, the steps along the foot. */
+.vis.fx-board {
+  box-sizing: border-box;
+  margin: 0;
+  background:
+    radial-gradient(60% 70% at 30% 35%, rgb(163 81 236 / 0.24), transparent 70%),
+    radial-gradient(50% 60% at 85% 95%, rgb(63 209 139 / 0.10), transparent 70%),
+    #0c0b14;
+  overflow: hidden;
+}
+.fx-board > .hd {
+  display: block;
+  width: 100%;
+  height: 100%;
+  --hd-font: 'Geist', system-ui, sans-serif;
+  --hd-mono: 'Geist Mono', ui-monospace, Menlo, monospace;
+  --hd-focus: #b9a4f5;
+}
+.fx-board .hd-win {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.fx-board .hd-bar { display: none; }
+.fx-board .hd-view { flex: 1; min-height: 0; aspect-ratio: auto; background: none; }
+.fx-board .hd-steps { background: rgb(255 255 255 / 0.03); border-top: 1px solid rgb(255 255 255 / 0.07); }
+/* On a phone the block is as tall as the stage at full width, plus the steps (the site's 3:2 rule is for pictures). */
+@media (max-width: 759px) {
+  .fw[data-style] :is(.row, .feat) > .vis.fx-board { aspect-ratio: auto !important; }
+  .fx-board > .hd { height: auto; }
+  .fx-board .hd-view { flex: none; aspect-ratio: 16 / 10; }
+}
+
+/* ---------- On the stage ---------- */
+.fx {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font: 400 14px/1.4 'Geist', system-ui, sans-serif;
+  color: #0f172a;
+  background: #f6f7f9;
+  -webkit-font-smoothing: antialiased;
+}
+.fx-mono { font-family: 'Geist Mono', ui-monospace, Menlo, monospace; }
+
+/* Harbor: one dashboard, its look set by a few variables (the knobs). */
+.fx-app {
+  /* Set by look() from the knobs: the colours Fader derives (muted, the label on accent, accent as text)
+     and the spacing scale (stack, card inset, section: base × contrast⁰ ¹ ²). */
+  --accent: #2257c9;
+  --ink: #0f172a;
+  --paper: #ffffff;
+  --muted: color-mix(in srgb, var(--ink) 58%, var(--paper));
+  --on-accent: #ffffff;
+  --accent-ink: var(--accent);
+  --sp-stack: 10px;
+  --sp-card: 14px;
+  --sp-section: 19.6px;
+  --hair: color-mix(in srgb, var(--ink) 11%, var(--paper));
+  --sunken: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  --r: 6px;
+  --rc: 5px;
+  --scale: 1.2;
+  --clean: 1;
+  --text: 1;
+  /* On the Studio's Stage: a sheet under the bar, like the Tokens board; Tune's panel pushes it aside. */
+  position: absolute;
+  top: 66px;
+  right: 14px;
+  bottom: 0;
+  left: calc(14px + var(--shift, 0px));
+  overflow: hidden;
+  border-radius: 18px 18px 0 0;
+  display: grid;
+  grid-template-columns: 196px 1fr;
+  background: var(--sunken);
+  color: var(--ink);
+  font-size: var(--t-body, 14px);
+}
+.fx-side {
+  padding: 18px 14px;
+  background: var(--paper);
+  border-right: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fx-logo { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: var(--t-body, 14px); padding: 0 10px 18px; }
+.fx-logo i { width: 20px; height: 20px; border-radius: 50%; background: conic-gradient(var(--accent) 0 50%, var(--ink) 0); }
+.fx-nav { padding: 8px 10px; border-radius: var(--rc); color: var(--muted); font-weight: 500; }
+.fx-nav.on { background: color-mix(in srgb, var(--accent) 12%, var(--paper)); color: var(--accent-ink); }
+.fx-main { padding: var(--sp-section) calc(var(--sp-section) * 1.5); display: flex; flex-direction: column; gap: var(--sp-card); min-width: 0; }
+.fx-head { display: flex; align-items: flex-end; justify-content: space-between; }
+.fx-head h1 { margin: 0; font-size: var(--t-h1, 29px); font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
+.fx-head p { margin: 4px 0 0; color: var(--muted); font-size: var(--t-cap, 12px); }
+.fx-actions { display: flex; gap: 8px; }
+.fx-btn { border: 1px solid var(--hair); border-radius: var(--rc); padding: 8px 14px; font: 500 var(--t-cap, 12px)/1 'Geist', sans-serif; background: var(--paper); color: var(--ink); }
+.fx-btn.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.fx-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-card); }
+.fx-card { position: relative; background: var(--paper); border: 1px solid var(--hair); border-radius: var(--r); padding: var(--sp-card) calc(var(--sp-card) * 1.25); min-width: 0; }
+.fx-card h3 { margin: 0 0 12px; font-size: var(--t-h4, 17px); font-weight: 500; }
+.fx-kpi small { display: block; color: var(--muted); font-size: var(--t-cap, 12px); margin-bottom: 6px; }
+.fx-num { font-size: var(--t-h2, 24px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.fx-chip { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 99px; font-size: var(--t-cap, 12px); font-weight: 500; vertical-align: middle; background: color-mix(in srgb, var(--accent) 12%, var(--paper)); color: var(--accent-ink); }
+.fx-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--sp-card); align-items: start; }
+.fx-bars { display: flex; align-items: flex-end; gap: 7px; height: 136px; padding-top: 6px; }
+.fx-bars i { flex: 1; border-radius: calc(var(--rc) * 0.6) calc(var(--rc) * 0.6) 0 0; background: var(--accent); opacity: 0.88; }
+.fx-bars i:nth-child(odd) { opacity: 0.55; }
+.fx-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--t-cap, 12px); margin-top: 8px; }
+.fx-row { display: grid; grid-template-columns: 1fr auto 74px; white-space: nowrap; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--hair); font-size: var(--t-body, 14px); }
+.fx-row .m { color: var(--muted); }
+.fx-row .s { justify-self: end; font-size: var(--t-cap, 12px); padding: 2px 8px; border-radius: 99px; background: var(--sunken); color: var(--muted); }
+.fx-row .s.paid { background: color-mix(in srgb, var(--accent) 12%, var(--paper)); color: var(--accent-ink); }
+.fx-link { color: var(--accent-ink); font-weight: 500; font-size: var(--t-cap, 12px); }
+.fx-prod { display: grid; grid-template-columns: 120px 1fr 64px; gap: 12px; align-items: center; padding: 6px 0; font-size: var(--t-body, 14px); }
+.fx-prod i { height: 8px; border-radius: 99px; background: var(--sunken); overflow: hidden; }
+.fx-prod b { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.fx-prod .m { color: var(--muted); text-align: right; }
+
+/* Harbor before Fader: each piece wears its own grey, corner and padding, mixed into the role as --clean goes 0 → 1. */
+.fx-app .fx-x { border-radius: calc(var(--mr, var(--r)) * (1 - var(--clean)) + var(--r) * var(--clean)); padding: calc(var(--mp, 16px) * (1 - var(--clean)) + var(--sp-card) * var(--clean)) calc(var(--mp, 18px) * (1 - var(--clean)) + var(--sp-card) * 1.25 * var(--clean)); }
+.fx-app .fx-x { border-color: color-mix(in srgb, var(--mb, var(--hair)) calc((1 - var(--clean)) * 100%), var(--hair)); }
+.fx-app .fx-x h3 { font-size: calc(var(--mh, var(--t-h4)) * (1 - var(--clean)) + var(--t-h4) * var(--clean)); }
+.fx-app .fx-x .fx-num { font-size: calc(var(--mh, var(--t-h2)) * (1 - var(--clean)) + var(--t-h2) * var(--clean)); }
+.fx-app .fx-xg { color: color-mix(in srgb, var(--mg, var(--muted)) calc((1 - var(--clean)) * 100%), var(--muted)); }
+/* The tag naming a card's own values; it goes as the card moves onto the roles. */
+.fx-tag { position: absolute; top: -10px; right: 12px; z-index: 2; padding: 4px 7px; border-radius: 6px; background: #0c0b14; color: #e9dcff; font: 500 10.5px/1 'Geist Mono', ui-monospace, Menlo, monospace; font-style: normal; white-space: nowrap; box-shadow: 0 0 0 1px rgb(163 81 236 / 0.55), 0 8px 18px -8px rgb(0 0 0 / 0.5); opacity: calc(var(--tagin, 1) * (1 - var(--clean))); transform: translateY(calc((1 - var(--tagin, 1)) * 5px)); }
+.fx-tag i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 2px; background: var(--mg); }
+/* The pass: a line of light across the app; behind it, everything wears the roles. */
+.fx-sweep { position: absolute; top: 0; bottom: 0; z-index: 3; width: 2px; margin-left: -1px; background: #b9a4f5; box-shadow: 0 0 18px 4px rgb(163 81 236 / 0.55), 0 0 60px 18px rgb(163 81 236 / 0.18); pointer-events: none; }
+/* What the look is made of: values counted up by hand, then folded into the knobs. */
+.fx-tally { position: absolute; right: 18px; bottom: 22px; z-index: 5; box-sizing: border-box; width: 290px; padding: 16px 18px 12px; border-radius: 14px; background: #0c0b14; color: #a9a4ba; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 24px 50px -20px rgb(0 0 0 / 0.7); font: 400 12px/1 'Geist', sans-serif; opacity: var(--in, 1); transform: translateY(calc((1 - var(--in, 1)) * 12px)); }
+.fx-thead { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.fx-thead b { min-width: 58px; font: 600 34px/1 'Geist', sans-serif; letter-spacing: -0.02em; color: #f4f2fa; font-variant-numeric: tabular-nums; }
+.fx-tw { display: grid; color: #d9d6e3; line-height: 1.35; }
+.fx-tw > span { grid-area: 1 / 1; }
+.fx-tl { display: grid; grid-template-columns: 70px 1fr 30px; align-items: center; gap: 10px; height: 21px; }
+.fx-tl i { height: 4px; border-radius: 2px; background: #25212f; }
+.fx-tl b { display: block; height: 100%; border-radius: 2px; background: #a351ec; }
+.fx-tl code { text-align: right; font: 500 12px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: #f4f2fa; font-variant-numeric: tabular-nums; }
+
+/* ---------- Fader's chrome (the Studio's own look) ---------- */
+.fx-tune { display: flex; align-items: center; gap: 9px; margin-right: 8px; color: #f4f2fa; }
+.fx-switch { position: relative; width: 30px; height: 17px; border-radius: 9px; background: #25212f; }
+.fx-switch::after { content: ''; position: absolute; left: 3px; top: 3px; width: 11px; height: 11px; border-radius: 50%; background: #f4f2fa; transform: translateX(calc(var(--on, 0) * 13px)); }
+.fx-switch.on { background: #a351ec; }
+.fx-count { justify-self: end; display: flex; align-items: center; gap: 7px; padding: 0 8px; font: 500 12px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: #f4f2fa; }
+.fx-count::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--dot, #3fd18b); }
+
+.fx-panel { position: absolute; left: 14px; top: 66px; z-index: 4; width: 300px; height: 560px; border-radius: 14px; background: #13111c; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 24px 60px -24px rgb(0 0 0 / 0.7); font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: #a9a4ba; overflow: hidden; }
+.fx-ptitle { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: #1b1827; font: 500 13px/1 'Geist', sans-serif; color: #f4f2fa; }
+.fx-ptitle small { font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; letter-spacing: 0.08em; color: #3fd18b; }
+.fx-write { position: absolute; left: 12px; top: 56px; width: 276px; height: 30px; border-radius: 6px; background: #a351ec; color: #f4f2fa; display: grid; place-items: center; }
+.fx-folder { position: absolute; left: 14px; color: #f4f2fa; }
+.fx-folder::before { content: '▾ '; color: #5f5a70; }
+.fx-prow { position: absolute; left: 22px; right: 12px; height: 22px; display: flex; align-items: center; }
+.fx-prow > span:first-child { width: 110px; }
+.fx-sw { width: 22px; height: 22px; border-radius: 4px; margin-right: 6px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08); }
+.fx-hex { flex: 1; height: 22px; border-radius: 4px; background: #25212f; color: #f4f2fa; display: flex; align-items: center; padding-left: 8px; }
+.fx-track { position: relative; width: 100px; height: 3px; border-radius: 2px; background: #25212f; margin-right: 10px; }
+.fx-track b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: #a351ec; width: calc(var(--v) * 100%); }
+.fx-track i { position: absolute; top: -7px; left: calc(var(--v) * 100% - 4px); width: 8px; height: 17px; border-radius: 3px; background: #b26ef0; }
+.fx-val { width: 40px; height: 22px; border-radius: 4px; background: #25212f; color: #f4f2fa; display: grid; place-items: center; }
+.fx-picker { position: absolute; left: 140px; top: 212px; z-index: 6; width: 150px; padding: 8px; border-radius: 8px; background: #1b1827; box-shadow: 0 12px 30px rgb(0 0 0 / 0.5); }
+.fx-sat { position: relative; height: 84px; border-radius: 4px; background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(var(--ph, 222) 100% 50%)); }
+.fx-sat i { position: absolute; left: calc(var(--ps, 0.8) * 100% - 6px); top: calc((1 - var(--pv, 0.8)) * 100% - 6px); width: 12px; height: 12px; box-sizing: border-box; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
+.fx-prow.open .fx-sw { box-shadow: 0 0 0 2px #a351ec; }
+.fx-hue { position: relative; height: 10px; margin-top: 8px; border-radius: 5px; background: linear-gradient(to right, red, #ff0, lime, cyan, blue, #f0f, red); }
+.fx-hue i { position: absolute; top: -3px; left: calc(var(--ph, 222) / 360 * 100% - 4px); width: 8px; height: 16px; border-radius: 3px; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.3); }
+.fx-toast { position: absolute; left: 50%; bottom: 26px; z-index: 6; transform: translate(-50%, calc((1 - var(--in, 0)) * 16px)); opacity: var(--in, 0); padding: 11px 16px; border-radius: 10px; background: #0c0b14; color: #f4f2fa; font: 400 12.5px/1 'Geist Mono', ui-monospace, Menlo, monospace; box-shadow: 0 16px 40px -18px rgb(0 0 0 / 0.7); white-space: nowrap; }
+.fx-toast::before { content: '✓ '; color: #3fd18b; }
+
+/* ---------- An editor and its problems, the coding agent beside it ---------- */
+.fx-dark { background: #0c0b14; color: #d9d6e3; }
+.fx-ed { position: absolute; top: 0; left: 0; bottom: 0; right: 400px; background: #13111c; color: #d9d6e3; font: 400 13px/22px 'Geist Mono', ui-monospace, Menlo, monospace; }
+.fx-edtab { height: 52px; display: flex; align-items: center; gap: 16px; padding: 0 18px; background: #0c0b14; border-bottom: 1px solid rgb(255 255 255 / 0.06); font: 400 12px/1 'Geist', sans-serif; }
+.fx-file { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 8px; background: #1b1827; color: #f4f2fa; }
+.fx-file::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: #89b4fa; }
+.fx-crumb { color: #7d7891; }
+.fx-code { padding: 18px 0; font-size: 14px; line-height: 25px; }
+.fx-ln { display: flex; white-space: pre; }
+.fx-ln > b { width: 46px; text-align: right; padding-right: 16px; color: #5f5a70; font-weight: 400; }
+.fx-ln.new { background: rgb(163 81 236 / 0.10); }
+.fx-k { color: #c792ea; } .fx-s { color: #a6e3a1; } .fx-t { color: #89b4fa; } .fx-a { color: #f9e2af; }
+.fx-bad { text-decoration: underline wavy #f05266; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.fx-caret { display: inline-block; width: 2px; height: 16px; margin-left: 1px; background: #b9a4f5; vertical-align: -3px; }
+.fx-probs { position: absolute; left: 0; right: 0; bottom: 0; height: 210px; border-top: 1px solid rgb(255 255 255 / 0.08); background: #0c0b14; padding: 16px 22px; font: 400 12px/1.5 'Geist Mono', ui-monospace, Menlo, monospace; }
+.fx-probs h4 { margin: 0 0 14px; font: 500 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #7d7891; }
+.fx-prob { display: grid; grid-template-columns: 18px 1fr; gap: 6px; margin-bottom: 10px; color: #f7a3ae; opacity: var(--in, 1); }
+.fx-prob::before { content: '×'; color: #f05266; font-weight: 700; }
+.fx-prob small { display: block; color: #a9a4ba; }
+.fx-ok { color: #7ee2a8; }
+
+/* ---------- A terminal ---------- */
+.fx-term { position: absolute; inset: 0; background: #0c0b14; color: #d9d6e3; font: 400 15px/27px 'Geist Mono', ui-monospace, Menlo, monospace; }
+.fx-termh { height: 52px; display: flex; align-items: center; gap: 14px; padding: 0 18px; border-bottom: 1px solid rgb(255 255 255 / 0.06); font: 400 12px/1 'Geist', sans-serif; color: #7d7891; }
+.fx-termh span { display: flex; gap: 6px; }
+.fx-termh i { width: 10px; height: 10px; border-radius: 50%; background: #25212f; }
+.fx-termb { padding: 26px 34px; }
+.fx-term .p { color: #7ee2a8; }
+.fx-term .d { color: #a9a4ba; }
+.fx-term .w { color: #f4f2fa; }
+
+/* ---------- The coding agent's panel, beside the work (blocks 2 and 3) ---------- */
+.fx-agentp { position: absolute; top: 0; right: 0; bottom: 0; width: 400px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 0 22px 22px; background: #13111c; border-left: 1px solid rgb(255 255 255 / 0.06); color: #d9d6e3; font: 400 13px/1.55 'Geist', sans-serif; }
+.fx-ah { flex: none; height: 52px; margin: 0 -22px 4px; padding: 0 22px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid rgb(255 255 255 / 0.06); font: 500 13px/1 'Geist', sans-serif; color: #f4f2fa; }
+.fx-ah i { width: 7px; height: 7px; border-radius: 50%; background: #a351ec; box-shadow: 0 0 0 4px rgb(163 81 236 / 0.18); }
+.fx-ah small { margin-left: auto; font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: #7d7891; }
+.fx-say { margin: 0; opacity: var(--in, 1); transform: translateY(calc((1 - var(--in, 1)) * 6px)); }
+.fx-say.tool { font: 400 12px/1.5 'Geist Mono', ui-monospace, Menlo, monospace; color: #a9a4ba; }
+.fx-say.tool b { font-weight: 500; color: #f7a3ae; }
+.fx-say.tool.ok b { color: #7ee2a8; }
+.fx-side-agent { top: 52px; z-index: 6; transform: translateX(calc((1 - var(--in, 0)) * 100%)); box-shadow: -30px 0 60px -30px rgb(0 0 0 / 0.6); }
+.fx-you { margin-left: auto; width: fit-content; max-width: 90%; padding: 9px 13px; border-radius: 12px 12px 4px 12px; background: #25212f; color: #f4f2fa; }
+.fx-plan { margin-top: 4px; }
+.fx-plan h5 { margin: 0 0 6px; font: 500 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #a9a4ba; }
+.fx-pl { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 9px 0; border-top: 1px solid rgb(255 255 255 / 0.06); opacity: var(--in, 1); }
+.fx-pl > span { color: #f4f2fa; font-weight: 500; }
+.fx-pl > b { font: 500 13px/1.5 'Geist Mono', ui-monospace, Menlo, monospace; color: #f4f2fa; }
+.fx-pl code { grid-column: 1 / -1; font: 400 12px/1.45 'Geist Mono', ui-monospace, Menlo, monospace; color: #b9a4f5; }
+
+/* ---------- The Tokens board and System, inside the Studio ---------- */
+.fx-studio { position: absolute; inset: 0; background: #0c0b14; }
+.fx-sbar { position: absolute; left: 0; right: 0; top: 0; height: 52px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 16px; border-bottom: 1px solid rgb(255 255 255 / 0.08); font: 400 13px/1 'Geist', sans-serif; color: rgb(244 242 250 / 0.6); }
+.fx-rooms { display: flex; gap: 2px; padding: 4px; border-radius: 12px; background: #15131f; }
+.fx-rooms span { padding: 8px 14px; border-radius: 8px; }
+.fx-rooms span.on { background: #25212f; color: #f4f2fa; }
+.fx-sheet { position: absolute; left: 14px; right: 14px; top: 66px; bottom: 0; border-radius: 18px 18px 0 0; background: var(--paper, #fff); color: var(--ink, #0f172a); padding: 28px 30px; overflow: hidden; font-family: 'Geist', sans-serif; }
+.fx-sheet h2 { display: flex; align-items: baseline; gap: 14px; margin: 0 0 20px; font: 600 30px/1 'Geist', sans-serif; letter-spacing: -0.025em; }
+.fx-sheet h2 small, .fx-sheet h4 small { font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; letter-spacing: 0; color: var(--muted); }
+.fx-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.fx-tc { border: 1px solid var(--hair); border-radius: 10px; padding: 16px 18px; background: var(--paper); }
+.fx-tc h4, .fx-type h4 { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 12px; font: 600 14px/1 'Geist', sans-serif; letter-spacing: -0.01em; }
+.fx-tr { display: flex; align-items: center; gap: 9px; height: 25px; font-size: 13px; }
+.fx-tr .r { margin-left: auto; display: flex; align-items: center; gap: 8px; font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: var(--muted); }
+.fx-dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--hair); }
+.fx-aa { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #1f9d55; box-shadow: 0 0 0 3px rgb(31 157 85 / 0.14); }
+.fx-aa.bad { background: #d92d20; box-shadow: 0 0 0 3px rgb(217 45 32 / 0.16); }
+.fx-type { margin-top: 12px; border: 1px solid var(--hair); border-radius: 10px; padding: 16px 18px; }
+.fx-trow { display: flex; align-items: center; gap: 14px; padding: 5px 0; }
+.fx-trow .meta { width: 210px; white-space: nowrap; flex: none; display: flex; align-items: center; gap: 9px; font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: var(--muted); }
+.fx-trow [data-m] { margin-left: auto; padding-right: 22px; }
+.fx-trow .meta.bad { color: #d92d20; }
+.fx-checks { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 16px; background: #15131f; }
+.fx-checks h4, .fx-names h4 { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 10px; font: 500 16px/1 'Geist', sans-serif; color: #f4f2fa; }
+.fx-checks h4 small { font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: #7d7891; }
+.fx-check { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 12px; border-radius: 10px; background: rgb(255 255 255 / 0.03); color: #a9a4ba; font: 400 12px/1.4 'Geist Mono', ui-monospace, Menlo, monospace; opacity: var(--in, 1); }
+.fx-check b { display: block; font: 500 15px/1.3 'Geist', sans-serif; color: #f4f2fa; }
+.fx-check i { width: 24px; height: 24px; border-radius: 50%; background: #3fd18b; color: #0c0b14; display: grid; place-items: center; font-style: normal; font-weight: 700; }
+.fx-names { padding: 18px; border-radius: 16px; background: #15131f; color: #a9a4ba; font: 400 12px/1 'Geist', sans-serif; }
+.fx-nm { display: grid; grid-template-columns: 110px 1fr auto; gap: 8px; padding: 9px 0; border-top: 1px solid rgb(255 255 255 / 0.08); }
+.fx-nm b { color: #f4f2fa; font-weight: 400; }
+.fx-nm code { font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: #b9a4f5; }
+
+/* Scene 1 is live: the reader can drag its sliders and the hue, and flip Tune. */
+.fx-live :is([data-drag], [data-colour], .fx-sat, .fx-hue, .fx-tune) { pointer-events: auto; touch-action: none; }
+.fx-live :is([data-drag], .fx-hue) { cursor: ew-resize; }
+.fx-live .fx-sat { cursor: crosshair; }
+.fx-live :is(.fx-tune, [data-colour]) { cursor: pointer; }
+.fx-live [data-colour]:hover .fx-sw { box-shadow: 0 0 0 2px rgb(163 81 236 / 0.5); }
+.fx-live [data-colour]:hover > span:first-child { color: #f4f2fa; }
+.fx-live [data-drag] .fx-track i { transition: box-shadow 0.2s; }
+.fx-live [data-drag]:is(:hover, .held) .fx-track i { box-shadow: 0 0 0 5px rgb(163 81 236 / 0.35); }
+.fx-live [data-drag]:is(:hover, .held) > span:first-child { color: #f4f2fa; }
+.fx-sbar .fx-tune { justify-self: start; }
+
+/* Scene 1's own Tokens and System rooms: they wear Harbor's values as the knobs move. */
+.fx-lboard { left: calc(14px + var(--shift, 0px)); background: var(--paper); color: var(--ink); --hair: color-mix(in srgb, var(--ink) 11%, var(--paper)); --sunken: color-mix(in srgb, var(--ink) 4%, var(--paper)); }
+.fx-lboard .fx-tr .r, .fx-lboard .fx-trow .meta, .fx-lboard small { color: var(--muted); }
+.fx-lboard .fx-dot { box-shadow: inset 0 0 0 1px var(--hair); }
+.fx-lboard .fx-tr .r b { font-weight: 400; }
+.fx-role { font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; padding: 4px 6px; border-radius: 4px; background: var(--sunken); color: var(--ink); }
+.fx-lboard .fx-trow { align-items: center; }
+.fx-c2 { grid-template-columns: 1fr 1fr; margin-top: 12px; }
+.fx-rs { display: flex; align-items: flex-end; gap: 20px; }
+.fx-mn { width: 44px; }
+.fx-rs > span { display: grid; gap: 8px; font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: var(--muted); }
+.fx-rs > span > i { width: 46px; height: 30px; border: 2px solid color-mix(in srgb, var(--ink) 30%, var(--paper)); border-width: 2px 0 0 2px; }
+.fx-rs > .fx-gap > i { height: 30px; border: 0; border-radius: 2px; background: color-mix(in srgb, var(--accent-ink) 22%, var(--paper)); }
+.fx-mo { flex: 1; height: 7px; border-radius: 4px; background: linear-gradient(90deg, var(--accent-ink) var(--w), var(--sunken) 0); }
+.fx-sysl { position: absolute; top: 52px; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px; align-content: start; }
+.fx-check i.bad { background: #f05266; color: #fff; }
+.fx-live .fx-rooms [data-r] { pointer-events: auto; cursor: pointer; }
+/* The board's details: a divider between the knobs and what they make; the agent's inline code. */
+.fx-sub { margin: 6px 0 2px; padding-top: 8px; border-top: 1px solid var(--hair); font: 400 10.5px/1 'Geist Mono', ui-monospace, Menlo, monospace; letter-spacing: 0.04em; color: var(--muted); }
+.fx-say code { font: 400 12px/1 'Geist Mono', ui-monospace, Menlo, monospace; padding: 2px 5px; border-radius: 4px; background: #25212f; color: #b9a4f5; white-space: nowrap; }
+
+/* ---------- Detail, beside System ---------- */
+.fx-dpanel { left: 14px; height: 44px; transform: none !important; opacity: 1 !important; visibility: visible !important; transition: none; }
+.fx-dpanel .fx-ptitle small { font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; letter-spacing: 0; color: #7d7891; }
+.fx-folder small { color: #7d7891; }
+.fx-read em { flex: 1; height: 22px; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-style: normal; background: rgb(163 81 236 / 0.12); color: #e4d4ff; }
+.fx-dpanel .fx-track b { left: calc(27.27% ); width: calc((var(--v) - 0.2727) * 100%); }
+/* ---------- A diff, and production ---------- */
+.fx-c { color: #6f6a86; }
+.fx-diff .fx-ln.del { background: rgb(240 82 102 / calc(0.12 * var(--in, 1))); color: rgb(247 163 174 / calc(0.5 + 0.5 * var(--in, 1))); text-decoration: line-through rgb(240 82 102 / calc(0.6 * var(--in, 1))); }
+.fx-diff .fx-ln.add { background: rgb(63 209 139 / calc(0.12 * var(--in, 1))); opacity: var(--in, 1); }
+.fx-diff .fx-ln.add > span { color: #c9f5dc; }
+.fx-chg { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; background: rgb(255 255 255 / 0.03); opacity: var(--in, 1); }
+.fx-chg code { font: 400 12px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: #f4f2fa; }
+.fx-chg b { font: 500 12px/1 'Geist Mono', ui-monospace, Menlo, monospace; color: #7ee2a8; }
+.fx-git > .fx-say { opacity: var(--in, 1); }
+.fx-shipped .fx-termh { gap: 12px; }
+.fx-url { font-weight: 500; padding: 7px 14px; border-radius: 8px; background: #1b1827; color: #f4f2fa; min-width: 360px; }
+.fx-shipped .fx-app { top: 52px; left: 0; right: 0; border-radius: 0; }
+.fx-app { right: calc(14px - var(--dshift, 0px)); }

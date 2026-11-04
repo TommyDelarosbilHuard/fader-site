@@ -1,0 +1,21 @@
+/* Fader's first image block (fader.js): block 4's Studio (demo/scenes.css draws it) in the case study's stage.
+   Here only what the stage adds: the User's cursor and its label, read-only rows, a look's flash. The cursor
+   and label come from tommydelarosbil.com's system-first block, in the light label every User wears. */
+.stg-fader { background: #0c0b14; }
+.stg-world.stg-fader:hover .cur { opacity: 1; }
+.stg-fader .cur { z-index: 95; transition: transform 0.8s cubic-bezier(0.45, 0.05, 0.2, 1), opacity 0.4s; }
+.stg-fader .cur-tag { position: absolute; left: 18px; top: 18px; display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 11px 11px 11px 3px; background: #f4f2fa; color: #13111c; font: 600 11px/1 'Geist', sans-serif; white-space: nowrap; box-shadow: 0 6px 16px rgb(0 0 0 / 0.35); transition: background 0.3s; }
+.stg-fader .cur-tag em { font-style: normal; font-weight: 400; opacity: 0.92; max-width: 0; overflow: hidden; transition: max-width 0.5s var(--e); }
+.stg-fader .cur.talking .cur-tag em { max-width: 240px; }
+.stg-fader .cur.talking .cur-tag em::before { content: '· '; }
+.stg-fader .cur.yield { opacity: 0.6; }
+.stg-fader .cur.yield .cur-tag { background: #3a3c47; color: #fff; }
+.stg-fader .cur.flip .cur-tag { left: auto; right: 12px; border-radius: 11px 11px 3px 11px; }
+/* The Studio answers the reader: rooms, Tune and the accent take a click; ink, paper and speed are read-only. */
+.fx-desk :is(.fx-rooms [data-r], .fx-tune, [data-row="accent"]) { pointer-events: auto; cursor: pointer; }
+.fx-desk .fx-rooms [data-r]:not(.on):hover { background: rgb(255 255 255 / 0.06); color: #f4f2fa; }
+.fx-desk [data-off] :is(span:first-child, .fx-hex, .fx-track, .fx-val) { opacity: 0.4; }
+.fx-desk [data-off].deny { animation: fx-deny 0.4s; }
+@keyframes fx-deny { 25%, 75% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+.fx-desk .flash { animation: fx-flash 1.3s ease; }
+@keyframes fx-flash { 0%, 60% { box-shadow: 0 0 0 3px rgb(163 81 236 / 0.45); } 100% { box-shadow: 0 0 0 3px transparent; } }
