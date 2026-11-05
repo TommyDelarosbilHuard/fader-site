@@ -228,34 +228,45 @@
         else b.removeAttribute('aria-current');
         const p =
           i === at.i ? Math.min(1, at.t / steps[i].dur) : i < at.i ? 1 : 0;
-        b.querySelector('i').style.setProperty('--p', p);
+        const bar = b.querySelector('i');
+        if (bar._p !== p) { bar._p = p; bar.style.setProperty('--p', p); }
       });
       listeners.forEach((fn) => fn(state()));
     }
 
-    // The clock: only on screen and in a shown tab, a quarter second at
-    // most per tick, looping; still under reduced motion.
+    // The clock: once per display frame (a 40 ms timer gave the pointer 25 moves a second, so it stepped on a 60 or
+    // 120 Hz screen), only on screen and in a shown tab, a quarter second at most per frame, looping; still under
+    // reduced motion. The frame loop stops while the window is off screen or the tab is hidden.
     let shown = false;
     let last = performance.now();
-    const io = new IntersectionObserver(
-      ([e]) => {
-        shown = e.isIntersecting;
-        last = performance.now();
-      },
-      { threshold: 0.3 },
-    );
-    io.observe(el);
-    const timer = setInterval(() => {
-      const now = performance.now();
+    let raf = 0;
+    const tick = (now) => {
+      raf = 0;
+      if (!shown || document.hidden) return;
+      raf = requestAnimationFrame(tick);
       const dt = Math.min(0.25, (now - last) / 1000);
       last = now;
-      if (still || paused || !shown || document.hidden) return;
+      if (still || paused) return;
       let { i, t } = at;
       t += dt;
       if (t >= steps[i].dur) begin((i + 1) % steps.length, 0);
       else at = { i, t };
       render();
-    }, 40);
+    };
+    const wake = () => {
+      if (raf || !shown || document.hidden) return;
+      last = performance.now();
+      raf = requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver(
+      ([e]) => {
+        shown = e.isIntersecting;
+        wake();
+      },
+      { threshold: 0.3 },
+    );
+    io.observe(el);
+    document.addEventListener('visibilitychange', wake);
 
     function play(i) {
       begin(i, still ? steps[i].dur : 0);
@@ -297,7 +308,9 @@
         return () => listeners.delete(fn);
       },
       destroy() {
-        clearInterval(timer);
+        cancelAnimationFrame(raf);
+        raf = 0;
+        document.removeEventListener('visibilitychange', wake);
         io.disconnect();
         ro.disconnect();
         el.replaceChildren();
