@@ -131,6 +131,8 @@
   height: 32px;
   transition-property: transform, opacity;
   transition-timing-function: cubic-bezier(0.55, 0, 0.25, 1), ease;
+  /* its own layer: moving the pointer every frame no longer repaints the window under it */
+  will-change: transform;
 }
 .hd-cursor svg {
   display: block;

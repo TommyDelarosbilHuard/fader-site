@@ -143,12 +143,20 @@
     };
     const pointers = [pointer()];
     const k = () => Number(view.style.getPropertyValue('--k')) || view.clientWidth / W;
+    /* What a frame needs to know about the page's layout, read once at the start of the frame (measure), while the
+       layout is still clean from the last one. A read after this frame's style writes makes the browser lay the
+       whole page out again, so reading where things are while drawing cost a layout per question per frame: a
+       slow machine dropped frames and the pointer stepped. Targets are asked in the frame's first read and
+       remembered; the next frames read them all up front. A target is at most one frame old. */
+    const geo = { v: null, ox: 0, oy: 0, scale: 1 };
+    const asked = new Map();   // key → [selector, ax, ay]: the targets the step has asked for
+    let snap = new Map();      // key → position, as measured at the start of this frame
     /** Puts pointer p where c says, or hides it. */
     function paint(p, c) {
       p.hidden = !c || still;
       if (!c) return;
       const s = Math.max(0.6, k());
-      p.style.transform = `translate(${view.offsetLeft + c.x * k() - 5 * s}px, ${view.offsetTop + c.y * k() - 5 * s}px) scale(${s})`;
+      p.style.transform = `translate(${geo.ox + c.x * k() - 5 * s}px, ${geo.oy + c.y * k() - 5 * s}px) scale(${s})`;
       p.classList.toggle('press', !!c.press);
       p.classList.toggle('away', !!c.hide);
       p.classList.toggle('watch', !!c.watch);
@@ -163,10 +171,29 @@
     /** Where an element is, in stage units. */
     const where = (n, ax = 0.5, ay = 0.5) => {
       if (!n) return [W / 2, 375];
-      const v = view.getBoundingClientRect();
+      const v = geo.v || view.getBoundingClientRect();
       const r = n.getBoundingClientRect();
-      const s = k() * (v.width / view.clientWidth || 1);
+      const s = geo.v ? geo.scale : k() * (v.width / view.clientWidth || 1);
       return [(r.left + r.width * ax - v.left) / s, (r.top + r.height * ay - v.top) / s];
+    };
+    /** The start of a frame: the layout is clean, so every question about it is cheap here. */
+    const measure = () => {
+      geo.v = view.getBoundingClientRect();
+      geo.ox = view.offsetLeft;
+      geo.oy = view.offsetTop;
+      geo.scale = k() * (geo.v.width / view.clientWidth || 1);
+      snap = new Map();
+      if (stage) for (const [key, [sel, ax, ay]] of asked) snap.set(key, where(stage.querySelector(sel), ax, ay));
+    };
+    const target = (sel, ax = 0.5, ay = 0.5) => {
+      const key = `${sel}|${ax}|${ay}`;
+      let v = snap.get(key);
+      if (!v) {
+        v = where(stage && stage.querySelector(sel), ax, ay);
+        snap.set(key, v);
+        asked.set(key, [sel, ax, ay]);
+      }
+      return v.slice();
     };
     const ctx = {
       steps,
@@ -175,7 +202,7 @@
       next: steps.length > 1 ? 1 : 0,
       from: null,
       last: null,
-      at: (sel, ax, ay) => where(stage && stage.querySelector(sel), ax, ay),
+      at: target,
     };
     // One number scales the whole stage to the view; the stage is at least
     // 1200 × 750 and as wide or tall as the view's shape asks.
@@ -192,6 +219,7 @@
       view.style.setProperty('--k', s);
       view.style.setProperty('--sw', `${sw}px`);
       view.style.setProperty('--sh', `${sh}px`);
+      snap = new Map();
     };
     const ro = new ResizeObserver(fit);
     ro.observe(view);
@@ -209,6 +237,8 @@
         stage.className = `hd-stage ${stageClass}`;
         stage.innerHTML = step.html;
         view.replaceChildren(stage);
+        asked.clear();
+        snap = new Map();
       }
       built = i;
       ctx.from = ctx.last || (step.lead ? step.lead(ctx).slice(0, 2) : [W / 2, 375]);
@@ -217,6 +247,7 @@
     function render() {
       const step = steps[at.i];
       if (built === -1) begin(at.i, at.t);
+      measure();
       const out = step.draw ? step.draw(at.t, $, ctx) || {} : {};
       const all = [out.cursor, ...(out.others || [])];
       while (pointers.length < all.length) pointers.push(pointer());

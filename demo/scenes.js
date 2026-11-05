@@ -11,6 +11,12 @@
   const lerp = (a, b, k) => a + (b - a) * k;
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const set = (el, props) => { if (el) for (const k in props) el.style.setProperty(k, props[k]); };
+  /* A scene sets every moving part on every frame. Writing a label's text again, even to the same words, makes the
+     browser replace the node and lay it out and paint it again, dozens of times a frame, so text is written only
+     when it changed. */
+  const txt = (el, s) => { s = String(s); if (el && el.textContent !== s) el.textContent = s; };
+  const shownHtml = new WeakMap();
+  const html = (el, s) => { if (el && shownHtml.get(el) !== s) { shownHtml.set(el, s); el.innerHTML = s; } };
   const $$ = ($, sel) => [...$('.fx').querySelectorAll(sel)];
 
   /** The agent's hand for a step: from where it was to the step's lead, along `path` ([from, to, x, y] in the
@@ -28,7 +34,7 @@
   const sbar = (rooms, count = 0, on = 0) => `<div class="fx-sbar"><span class="fx-tune"><span class="fx-switch"></span>Tune</span><span class="fx-rooms">${rooms.map((r, i) => `<span data-r="${r.toLowerCase()}"${i === on ? ' class="on"' : ''}>${r}</span>`).join('')}</span><span class="fx-count">${count} problems</span></div>`;
   const ON_STAGE = ['Stage', 'Tokens', 'System'];
   function problems($, n) {
-    $('.fx-count').textContent = `${n} problem${n === 1 ? '' : 's'}`;
+    txt($('.fx-count'), `${n} problem${n === 1 ? '' : 's'}`);
     set($('.fx-count'), { '--dot': n ? '#f5b84a' : '#3fd18b' });
   }
   function room($, r) { $$($, '.fx-rooms span').forEach((s) => s.classList.toggle('on', s.dataset.r === r)); }
@@ -93,7 +99,7 @@
   function knob($, key, v, shown) {
     const row = $(`[data-row="${key}"]`);
     set(row, { '--v': clamp(v) });
-    row.querySelector('.fx-val').textContent = shown;
+    txt(row.querySelector('.fx-val'), shown);
   }
 
   // ---------- Colours: { h, s, v } as the picker draws them; contrast as WCAG counts it ----------
@@ -138,7 +144,7 @@
     for (const key of ['ink', 'paper', 'accent']) {
       const row = $(`[data-row="${key}"]`);
       row.querySelector('.fx-sw').style.background = hex(d[key]);
-      row.querySelector('.fx-hex').textContent = hex(d[key]);
+      txt(row.querySelector('.fx-hex'), hex(d[key]));
       row.classList.toggle('open', v.picker === key);
     }
     $('.fx-picker').hidden = !v.picker;
@@ -215,19 +221,19 @@
       for (const n of COLOURS) {
         const row = $(`[data-p="${n}"]`);
         row.querySelector('.fx-dot').style.background = hex(made[n]);
-        row.querySelector('.r').textContent = how[n] || hex(made[n]);
+        txt(row.querySelector('.r'), how[n] || hex(made[n]));
       }
       for (const [l, fg, bg, min] of AA) {
         const r = ratio(d[fg], d[bg]), row = $(`[data-aa="${l}"]`);
         row.querySelector('.fx-aa').classList.toggle('bad', r < min);
-        row.querySelector('b').textContent = `${r.toFixed(1)}:1`;
+        txt(row.querySelector('b'), `${r.toFixed(1)}:1`);
       }
-      $('[data-tnote]').textContent = `body ${v.text.toFixed(2)}rem · scale ${v.scale.toFixed(2)}`;
+      txt($('[data-tnote]'), `body ${v.text.toFixed(2)}rem · scale ${v.scale.toFixed(2)}`);
       for (const [n, step] of TYPES) {
         const row = $(`[data-t="${n}"]`), px = rolePx(v, step), small = bad.find((p) => p.size && p.line.startsWith(`${n} `));
         const red = small || bad.some((p) => p.pair && p.line.startsWith(`${n} (`));
         row.querySelector('[data-s]').style.fontSize = `${px * DRAWN}px`;
-        row.querySelector('[data-m]').textContent = small ? `${pxShown(px, ROLES.find(([r]) => r === n)[4])}px · too small` : `${Math.round(px)}px`;
+        txt(row.querySelector('[data-m]'), small ? `${pxShown(px, ROLES.find(([r]) => r === n)[4])}px · too small` : `${Math.round(px)}px`);
         row.querySelector('.fx-aa').classList.toggle('bad', !!red);
         row.querySelector('.meta').classList.toggle('bad', !!red);
       }
@@ -235,12 +241,12 @@
       for (const [n, r] of [['cards', v.r], ['nested', Math.max(0, v.r - card)], ['controls', v.rc]]) {
         const el = $(`[data-c="${n}"]`);
         el.querySelector('i').style.borderTopLeftRadius = `${r}px`;
-        el.querySelector('small').textContent = `${n} ${Math.round(r)}px`;
+        txt(el.querySelector('small'), `${n} ${Math.round(r)}px`);
       }
       for (const [n, px] of [['stack', v.sb], ['card', card], ['section', card * v.sr]]) {
         const el = $(`[data-g="${n}"]`);
         el.querySelector('i').style.width = `${px}px`;
-        el.querySelector('small').textContent = `${n} ${Math.round(px)}px`;
+        txt(el.querySelector('small'), `${n} ${Math.round(px)}px`);
       }
     }
     if (v.room === 'system') {
@@ -248,9 +254,9 @@
       const lines = bad.map((p) => p.line);
       const check = (sel, fail, detail) => {
         const c = $(sel);
-        c.querySelector('i').textContent = fail ? '×' : '✓';
+        txt(c.querySelector('i'), fail ? '×' : '✓');
         c.querySelector('i').classList.toggle('bad', fail);
-        c.querySelector('span > span').textContent = detail;
+        txt(c.querySelector('span > span'), detail);
       };
       check('[data-contrast]', fails.length > 0, fails.length ? fails.slice(0, 2).map(([l, r, min]) => `${l} ${r.toFixed(1)}:1 < ${min}:1`).join(' · ') : `${AA.length} pairs at AA or better`);
       check('[data-look]', lines.length > 0, lines.length ? `${lines.length} to fix: ${lines[0]}` : 'Lint, tokens and look all pass');
@@ -299,7 +305,7 @@
     return hi.replace(/^(\s*)&lt;p/, '$1&lt;<span class="fx-t">p</span>').replace(/className/, '<span class="fx-a">className</span>');
   }
   function lint($, { text, caret, flag, probs, said }) {
-    $('[data-new]').innerHTML = line(text, flag) + (caret ? '<span class="fx-caret"></span>' : '');
+    html($('[data-new]'), line(text, flag) + (caret ? '<span class="fx-caret"></span>' : ''));
     $$($, '.fx-say').forEach((p, i) => { p.hidden = said <= i; set(p, { '--in': clamp(said - i) }); });
     $$($, '.fx-prob').forEach((p, i) => { p.hidden = probs <= i + 0.01; set(p, { '--in': clamp(probs - i) }); });
     $('.fx-ok').hidden = probs > 0.01;
@@ -355,7 +361,8 @@
   function adopt($, { tags = 9, up = 1, tally = 1, sweep = -1e3, fold = 0, count = 23, agent = 0, ask = '', ran = false, plan = 0, go = '', done = false, conn = false, on = 0, panelIn = 0 }) {
     look($, { ...START, on, panel: panelIn });
     const app = $('.fx-app'), box = app.getBoundingClientRect(), k = box.width / app.offsetWidth;
-    $$($, '.fx-x, .fx-xg').forEach((el) => { const r = el.getBoundingClientRect(), x = app.offsetLeft + (r.left - box.left) / k; set(el, { '--clean': ease(sweep, x, x + r.width / k) }); });
+    // every position is read before any is written: a read after a write makes the browser lay the page out again, once per piece, every frame
+    [...$$($, '.fx-x, .fx-xg')].map((el) => [el, el.getBoundingClientRect()]).forEach(([el, r]) => { const x = app.offsetLeft + (r.left - box.left) / k; set(el, { '--clean': ease(sweep, x, x + r.width / k) }); });
     $$($, '.fx-tag').forEach((el, i) => set(el, { '--tagin': clamp(tags - i) }));
     set($('.fx-sweep'), { left: `${sweep}px`, opacity: sweep > 0 && sweep < 1200 ? 1 : 0 });
     set($('.fx-tally'), { '--in': tally });
@@ -363,17 +370,17 @@
     $$($, '.fx-tl').forEach((row, i) => {
       const [, was, now] = TALLY[i], n = Math.round(lerp(was * up, now, fold));
       total += n;
-      row.querySelector('code').textContent = n;
+      txt(row.querySelector('code'), n);
       set(row.querySelector('b'), { width: `${(n / 48) * 100}%` });
     });
-    $('[data-total]').textContent = total;
+    txt($('[data-total]'), total);
     set($('[data-was]'), { opacity: 1 - ease(fold, 0.8, 1) });
     set($('[data-now]'), { opacity: ease(fold, 0.8, 1) });
     problems($, count);
     set($('.fx-side-agent'), { '--in': agent });
-    $('[data-ask]').textContent = ask;
+    txt($('[data-ask]'), ask);
     $('[data-ran]').hidden = !ran;
-    $('[data-go]').textContent = go;
+    txt($('[data-go]'), go);
     $('[data-go]').hidden = !go;
     $$($, '.fx-pl').forEach((p, i) => set(p, { '--in': clamp(plan - i) }));
     $('[data-done]').hidden = !done;
@@ -461,10 +468,10 @@
     $$($, '[data-nudge]').forEach((row) => {
       const n = row.dataset.nudge === 'H1' ? v.nh1 : 0;
       set(row, { '--v': (n - NUDGE[0]) / (NUDGE[1] - NUDGE[0]) });
-      row.querySelector('.fx-val').textContent = `${n > 0 ? '+' : ''}${Math.round(n)}%`;
+      txt(row.querySelector('.fx-val'), `${n > 0 ? '+' : ''}${Math.round(n)}%`);
     });
     const base = rolePx(v, 4);
-    $('[data-read="h1"]').textContent = v.nh1 ? `${Math.round(base)}px +${Math.round(v.nh1)}% = ${Math.round(base * (1 + v.nh1 / 100))}px` : `${Math.round(base)}px, on the scale`;
+    txt($('[data-read="h1"]'), v.nh1 ? `${Math.round(base)}px +${Math.round(v.nh1)}% = ${Math.round(base * (1 + v.nh1 / 100))}px` : `${Math.round(base)}px, on the scale`);
   }
   const nudgeAt = (ctx, n) => ctx.at('[data-nudge="H1"] .fx-track', (n - NUDGE[0]) / (NUDGE[1] - NUDGE[0]), 0.5);
   const FIVE = [
