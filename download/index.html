@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Download · Fader</title>
 <style>body{margin:0;font:17px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0f0f0f}main{max-width:640px;margin:0 auto;padding:48px 16px}a{color:#003cd4}</style></head>
 <body><main><p id="say">Starting your download…</p></main><script>
-const key=location.hash.slice(1);
+const key=location.hash.slice(1),email="delarosbil.t@gmail.com";
 if(key)location.replace('https://fader-checkout.fader-checkout.workers.dev/download/'+encodeURIComponent(key));
-else document.getElementById('say').innerHTML='This link is missing its end. Copy the whole link from the page you saw after paying, or write to <a href="mailto:delarosbil.t@gmail.com">delarosbil.t@gmail.com</a>.';
+else document.getElementById('say').innerHTML='This link is missing its end. Copy the whole link from the page you saw after paying, or write to <a href="mailto:'+email+'">'+email+'</a>.';
 </script></body></html>
